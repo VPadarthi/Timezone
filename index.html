@@ -84,17 +84,24 @@
         }
 
         .date-display {
-            font-size: 13px;
-            color: #718096;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4a5568;
             text-align: right;
             margin-top: 4px;
+        }
+
+        .day-offset {
+            font-size: 11px;
+            color: #718096;
+            display: block;
+            font-weight: normal;
         }
 
         .slider-container {
             margin: 35px 0 20px 0;
         }
 
-        /* Customizing the Scrollbar/Slider Track */
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
@@ -161,7 +168,7 @@
 
 <div class="container">
     <h1>EST / IST Time Finder</h1>
-    <p class="subtitle">Drag the scroll bar to view corresponding matching times</p>
+    <p class="subtitle">Drag the scroll bar to view corresponding matching times and dates</p>
 
     <!-- EST Card -->
     <div class="time-box">
@@ -170,8 +177,8 @@
             <span class="zone-sub" id="estOffset">Eastern Standard Time</span>
         </div>
         <div>
-            <div class="time-display" id="estTime">12:00 PM</div>
-            <div class="date-display" id="estDate">Today</div>
+            <div class="time-display" id="estTime">- - : - -</div>
+            <div class="date-display" id="estDate">- - - -</div>
         </div>
     </div>
 
@@ -182,8 +189,8 @@
             <span class="zone-sub">India Standard Time (UTC+5:30)</span>
         </div>
         <div>
-            <div class="time-display" id="istTime">10:30 PM</div>
-            <div class="date-display" id="istDate">Today</div>
+            <div class="time-display" id="istTime">- - : - -</div>
+            <div class="date-display" id="istDate">- - - -</div>
         </div>
     </div>
 
@@ -214,7 +221,6 @@
     // Automatically determine if Eastern Time is currently in Daylight Saving (EDT) or Standard (EST)
     function getEstOffsetMinutes() {
         const d = new Date();
-        // Force evaluation in America/New_York zone
         const nyString = d.toLocaleString("en-US", {timeZone: "America/New_York", timeZoneName: "short"});
         const isEDT = nyString.includes("EDT");
         
@@ -233,16 +239,15 @@
     // Calculate current EST time to initialize slider
     function setSliderToCurrentTime() {
         const localDate = new Date();
-        // Convert current system time to EST minutes from midnight
         const utcMinutes = localDate.getUTCHours() * 60 + localDate.getUTCMinutes();
         let estMinutesToday = (utcMinutes + estOffsetMinutes + 1440) % 1440;
         slider.value = estMinutesToday;
         updateTimes(estMinutesToday);
     }
 
-    function formatTime(totalMinutes) {
-        let hours = Math.floor(totalMinutes / 60) % 24;
-        let mins = Math.floor(totalMinutes % 60);
+    function formatTime(dateObj) {
+        let hours = dateObj.getHours();
+        let mins = dateObj.getMinutes();
         let ampm = hours >= 12 ? 'PM' : 'AM';
         
         hours = hours % 12;
@@ -252,31 +257,41 @@
         return `${hours}:${mins} ${ampm}`;
     }
 
+    function formatDate(dateObj) {
+        const options = { weekday: 'short', month: 'short', day: 'numeric' };
+        return dateObj.toLocaleDateString('en-US', options);
+    }
+
     function updateTimes(estMinutes) {
-        // Base everything on a single mock anchor date to easily track day changes
-        const anchorDate = new Date(2026, 0, 15, 0, estMinutes); // Jan 15th midnight + slider minutes
+        const now = new Date();
+        
+        // 1. Establish the current absolute target date for Eastern Time
+        // This converts the local device timestamp directly into an equivalent New York target date
+        const estString = now.toLocaleString("en-US", {timeZone: "America/New_York"});
+        const estCurrentTargetDate = new Date(estString);
+        
+        // 2. Set the hours and minutes of that target date to match our interactive slider value
+        estCurrentTargetDate.setHours(Math.floor(estMinutes / 60), Math.floor(estMinutes % 60), 0, 0);
 
-        // Format EST Display
-        estTimeEl.innerText = formatTime(estMinutes);
-        estDateEl.innerText = "Selected Day";
+        // 3. Format and output the exact calculated Eastern Date text card
+        estTimeEl.innerText = formatTime(estCurrentTargetDate);
+        estDateEl.innerHTML = `${formatDate(estCurrentTargetDate)} <span class="day-offset">Selected Base Day</span>`;
 
-        // Calculate IST relative to the selected EST time
-        // Minute difference = IST offset minus EST offset
+        // 4. Track India Standard Time offset explicitly relative to the Eastern slider target time
         const totalDiffMinutes = istOffsetMinutes - estOffsetMinutes;
-        const istDate = new Date(anchorDate.getTime() + totalDiffMinutes * 60 * 1000);
+        const istCalculatedDate = new Date(estCurrentTargetDate.getTime() + totalDiffMinutes * 60 * 1000);
 
-        // Format IST Display
-        const istMinutesTotal = istDate.getHours() * 60 + istDate.getMinutes();
-        istTimeEl.innerText = formatTime(istMinutesTotal);
+        // 5. Format and output the exact calculated India text card
+        istTimeEl.innerText = formatTime(istCalculatedDate);
 
-        // Check if IST pushed into the next calendar day
-        if (istDate.getDate() > anchorDate.getDate()) {
-            istDateEl.innerText = "Next Day (+1)";
-        } else if (istDate.getDate() < anchorDate.getDate()) {
-            istDateEl.innerText = "Previous Day (-1)";
-        } else {
-            istDateEl.innerText = "Same Day";
+        // Calculate and clearly display if India is physically on a ahead/behind calendar day
+        let dateLabel = "Same Day";
+        if (istCalculatedDate.getDate() !== estCurrentTargetDate.getDate()) {
+            // Simple absolute check to see if the timestamp pushed forward past midnight into tomorrow
+            dateLabel = istCalculatedDate.getTime() > estCurrentTargetDate.getTime() ? "Next Day (+1)" : "Previous Day (-1)";
         }
+        
+        istDateEl.innerHTML = `${formatDate(istCalculatedDate)} <span class="day-offset">${dateLabel}</span>`;
     }
 
     // Event listeners
