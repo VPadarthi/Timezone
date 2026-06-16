@@ -6,14 +6,14 @@
     <title>Interactive Time Zone Converter (EST & IST)</title>
     <style>
         :root {
-            --bg-color: #0f172a; /* Deep dark blue-gray background */
-            --card-bg: #1e293b; /* Sleek slate card container */
-            --text-main: #f8fafc; /* Crisp near-white text */
-            --text-muted: #94a3b8; /* Soft slate gray for descriptions */
-            --primary: #38bdf8; /* Bright sky blue accents for EST */
-            --accent: #fbbf24; /* Warm amber accents for IST */
-            --slider-track: #334155; /* Dark track for the slider */
-            --box-bg: #111827; /* Rich inset panel background */
+            --bg-color: #0f172a; 
+            --card-bg: #1e293b; 
+            --text-main: #f8fafc; 
+            --text-muted: #94a3b8; 
+            --primary: #38bdf8; 
+            --accent: #fbbf24; 
+            --slider-track: #334155; 
+            --box-bg: #111827; 
         }
 
         body {
@@ -109,7 +109,6 @@
             margin: 35px 0 20px 0;
         }
 
-        /* Customizing the Scrollbar/Slider Track */
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
@@ -183,7 +182,7 @@
     <!-- EST Card -->
     <div class="time-box">
         <div>
-            <span class="zone-label">EST</span>
+            <span class="zone-label" id="estTitle">EST</span>
             <span class="zone-sub" id="estOffset">Eastern Standard Time</span>
         </div>
         <div>
@@ -226,45 +225,46 @@
     const istTimeEl = document.getElementById('istTime');
     const istDateEl = document.getElementById('istDate');
     const estOffsetEl = document.getElementById('estOffset');
+    const estTitleEl = document.getElementById('estTitle');
     const resetBtn = document.getElementById('resetBtn');
 
-    // Automatically determine if Eastern Time is currently in Daylight Saving (EDT) or Standard (EST)
-    function getEstOffsetMinutes() {
+    // Safe, universal check for Eastern Daylight Saving status
+    function checkDST() {
         const d = new Date();
         const nyString = d.toLocaleString("en-US", {timeZone: "America/New_York", timeZoneName: "short"});
         const isEDT = nyString.includes("EDT");
         
         if (isEDT) {
+            estTitleEl.innerText = "EDT";
             estOffsetEl.innerText = "Eastern Daylight Time (UTC-4)";
             return -240; // -4 hours in minutes
         } else {
+            estTitleEl.innerText = "EST";
             estOffsetEl.innerText = "Eastern Standard Time (UTC-5)";
             return -300; // -5 hours in minutes
         }
     }
 
-    const estOffsetMinutes = getEstOffsetMinutes();
-    const istOffsetMinutes = 330; // +5:30 in minutes (5 * 60 + 30)
+    const estOffsetMinutes = checkDST();
+    const istOffsetMinutes = 330; // Fixed India offset (+5:30)
 
-    // Calculate current EST time to initialize slider
     function setSliderToCurrentTime() {
-        const localDate = new Date();
-        const utcMinutes = localDate.getUTCHours() * 60 + localDate.getUTCMinutes();
+        const now = new Date();
+        // Convert to absolute UTC minutes from midnight
+        const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+        // Convert UTC to local Eastern time minutes
         let estMinutesToday = (utcMinutes + estOffsetMinutes + 1440) % 1440;
+        
         slider.value = estMinutesToday;
         updateTimes(estMinutesToday);
     }
 
-    function formatTime(dateObj) {
-        let hours = dateObj.getHours();
-        let mins = dateObj.getMinutes();
+    function formatTime(hours, minutes) {
         let ampm = hours >= 12 ? 'PM' : 'AM';
-        
         hours = hours % 12;
-        hours = hours ? hours : 12; // convert 0 to 12
-        mins = mins < 10 ? '0' + mins : mins;
-        
-        return `${hours}:${mins} ${ampm}`;
+        hours = hours ? hours : 12; 
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        return `${hours}:${minutes} ${ampm}`;
     }
 
     function formatDate(dateObj) {
@@ -273,29 +273,44 @@
     }
 
     function updateTimes(estMinutes) {
+        // Find current base day in New York timezone safely
         const now = new Date();
+        const nyString = now.toLocaleString("en-US", {timeZone: "America/New_York"});
+        const estBaseDate = new Date(nyString);
         
-        // 1. Establish the current absolute target date for Eastern Time
-        const estString = now.toLocaleString("en-US", {timeZone: "America/New_York"});
-        const estCurrentTargetDate = new Date(estString);
-        
-        // 2. Set the hours and minutes of that target date to match our interactive slider value
-        estCurrentTargetDate.setHours(Math.floor(estMinutes / 60), Math.floor(estMinutes % 60), 0, 0);
+        // Update New York target date using explicit slider parameters
+        estBaseDate.setHours(Math.floor(estMinutes / 60), Math.floor(estMinutes % 60), 0, 0);
 
-        // 3. Format and output the exact calculated Eastern Date text card
-        estTimeEl.innerText = formatTime(estCurrentTargetDate);
-        estDateEl.innerHTML = `${formatDate(estCurrentTargetDate)} <span class="day-offset">Selected Base Day</span>`;
+        // Display New York output fields
+        estTimeEl.innerText = formatTime(estBaseDate.getHours(), estBaseDate.getMinutes());
+        estDateEl.innerHTML = `${formatDate(estBaseDate)} <span class="day-offset">Selected Base Day</span>`;
 
-        // 4. Track India Standard Time offset explicitly relative to the Eastern slider target time
+        // Calculate explicit offset difference between zones
         const totalDiffMinutes = istOffsetMinutes - estOffsetMinutes;
-        const istCalculatedDate = new Date(estCurrentTargetDate.getTime() + totalDiffMinutes * 60 * 1000);
+        const istCalculatedDate = new Date(estBaseDate.getTime() + totalDiffMinutes * 60 * 1000);
 
-        // 5. Format and output the exact calculated India text card
-        istTimeEl.innerText = formatTime(istCalculatedDate);
+        // Display India output fields
+        istTimeEl.innerText = formatTime(istCalculatedDate.getHours(), istCalculatedDate.getMinutes());
 
-        // Calculate and clearly display if India is physically on an ahead/behind calendar day
+        // Determine if India has crossed into a different calendar date
         let dateLabel = "Same Day";
-        if (istCalculatedDate.getDate() !== estCurrentTargetDate.getDate()) {
-            dateLabel = istCalculatedDate.getTime() > estCurrentTargetDate.getTime() ? "Next Day (+1)" : "Previous Day (-1)";
+        if (istCalculatedDate.getDate() !== estBaseDate.getDate()) {
+            dateLabel = istCalculatedDate.getTime() > estBaseDate.getTime() ? "Next Day (+1)" : "Previous Day (-1)";
         }
         
+        istDateEl.innerHTML = `${formatDate(istCalculatedDate)} <span class="day-offset">${dateLabel}</span>`;
+    }
+
+    // Event listeners
+    slider.addEventListener('input', (e) => {
+        updateTimes(parseInt(e.target.value));
+    });
+
+    resetBtn.addEventListener('click', setSliderToCurrentTime);
+
+    // Run app on launch
+    setSliderToCurrentTime();
+</script>
+
+</body>
+</html>
