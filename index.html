@@ -6,11 +6,14 @@
     <title>Interactive Time Zone Converter (EST & IST)</title>
     <style>
         :root {
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-            --text-main: #2d3748;
-            --primary: #4a90e2;
-            --accent: #f5a623;
+            --bg-color: #0f172a; /* Deep dark blue-gray background */
+            --card-bg: #1e293b; /* Sleek slate card container */
+            --text-main: #f8fafc; /* Crisp near-white text */
+            --text-muted: #94a3b8; /* Soft slate gray for descriptions */
+            --primary: #38bdf8; /* Bright sky blue accents for EST */
+            --accent: #fbbf24; /* Warm amber accents for IST */
+            --slider-track: #334155; /* Dark track for the slider */
+            --box-bg: #111827; /* Rich inset panel background */
         }
 
         body {
@@ -28,7 +31,7 @@
         .container {
             background-color: var(--card-bg);
             border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
             padding: 30px;
             width: 100%;
             max-width: 550px;
@@ -40,17 +43,18 @@
             margin-top: 0;
             margin-bottom: 8px;
             text-align: center;
+            letter-spacing: -0.5px;
         }
 
         .subtitle {
-            color: #718096;
+            color: var(--text-muted);
             text-align: center;
             font-size: 14px;
             margin-bottom: 30px;
         }
 
         .time-box {
-            background: #f8fafc;
+            background: var(--box-bg);
             border-left: 5px solid var(--primary);
             padding: 15px 20px;
             border-radius: 8px;
@@ -58,6 +62,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .time-box.ist {
@@ -67,33 +72,35 @@
         .zone-label {
             font-weight: 600;
             font-size: 16px;
-            color: #4a5568;
+            color: var(--text-main);
         }
 
         .zone-sub {
             font-size: 12px;
-            color: #a0aec0;
+            color: var(--text-muted);
             display: block;
             font-weight: normal;
+            margin-top: 2px;
         }
 
         .time-display {
             font-size: 28px;
             font-weight: 700;
             font-variant-numeric: tabular-nums;
+            color: #ffffff;
         }
 
         .date-display {
             font-size: 14px;
             font-weight: 600;
-            color: #4a5568;
+            color: #e2e8f0;
             text-align: right;
             margin-top: 4px;
         }
 
         .day-offset {
             font-size: 11px;
-            color: #718096;
+            color: var(--text-muted);
             display: block;
             font-weight: normal;
         }
@@ -102,6 +109,7 @@
             margin: 35px 0 20px 0;
         }
 
+        /* Customizing the Scrollbar/Slider Track */
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
@@ -116,7 +124,7 @@
             width: 100%;
             height: 10px;
             cursor: pointer;
-            background: #e2e8f0;
+            background: var(--slider-track);
             border-radius: 5px;
         }
 
@@ -128,12 +136,13 @@
             cursor: pointer;
             -webkit-appearance: none;
             margin-top: -7px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-            transition: transform 0.1s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s, background-color 0.2s;
         }
 
         input[type=range]::-webkit-slider-thumb:hover {
-            transform: scale(1.1);
+            transform: scale(1.15);
+            background: #7dd3fc;
         }
 
         .ticks {
@@ -141,26 +150,27 @@
             justify-content: space-between;
             padding: 0 5px;
             margin-top: 8px;
-            color: #a0aec0;
+            color: var(--text-muted);
             font-size: 11px;
         }
 
         .btn-reset {
             display: block;
             margin: 20px auto 0 auto;
-            background: #edf2f7;
-            border: none;
+            background: #334155;
+            border: 1px solid #475569;
             padding: 8px 16px;
             border-radius: 20px;
             cursor: pointer;
             font-size: 13px;
-            color: #4a5568;
+            color: #f1f5f9;
             font-weight: 500;
-            transition: background 0.2s;
+            transition: background 0.2s, border-color 0.2s;
         }
 
         .btn-reset:hover {
-            background: #e2e8f0;
+            background: #475569;
+            border-color: #64748b;
         }
     </style>
 </head>
@@ -266,7 +276,6 @@
         const now = new Date();
         
         // 1. Establish the current absolute target date for Eastern Time
-        // This converts the local device timestamp directly into an equivalent New York target date
         const estString = now.toLocaleString("en-US", {timeZone: "America/New_York"});
         const estCurrentTargetDate = new Date(estString);
         
@@ -284,26 +293,9 @@
         // 5. Format and output the exact calculated India text card
         istTimeEl.innerText = formatTime(istCalculatedDate);
 
-        // Calculate and clearly display if India is physically on a ahead/behind calendar day
+        // Calculate and clearly display if India is physically on an ahead/behind calendar day
         let dateLabel = "Same Day";
         if (istCalculatedDate.getDate() !== estCurrentTargetDate.getDate()) {
-            // Simple absolute check to see if the timestamp pushed forward past midnight into tomorrow
             dateLabel = istCalculatedDate.getTime() > estCurrentTargetDate.getTime() ? "Next Day (+1)" : "Previous Day (-1)";
         }
         
-        istDateEl.innerHTML = `${formatDate(istCalculatedDate)} <span class="day-offset">${dateLabel}</span>`;
-    }
-
-    // Event listeners
-    slider.addEventListener('input', (e) => {
-        updateTimes(parseInt(e.target.value));
-    });
-
-    resetBtn.addEventListener('click', setSliderToCurrentTime);
-
-    // Initial load
-    setSliderToCurrentTime();
-</script>
-
-</body>
-</html>
