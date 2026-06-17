@@ -1,339 +1,622 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Time Zone Converter (EST & IST)</title>
-    <style>
-        :root {
-            --bg-color: #0b0f19; 
-            --card-bg: #151f32; 
-            --text-main: #f8fafc; 
-            --text-muted: #64748b; 
-            --primary: #38bdf8; 
-            --accent: #fbbf24; 
-            --slider-track: #1e293b; 
-            --box-bg: #0f172a; 
-            
-            /* Day Theme Background & Accents */
-            --day-bg: linear-gradient(180deg, #bae6fd 0%, #ffedd5 100%);
-            --day-text: #0f172a;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EST / IST Time Finder</title>
+  <style>
+    :root {
+      --bg: #050814;
+      --panel: rgba(35, 38, 51, 0.72);
+      --panel-strong: rgba(46, 49, 64, 0.84);
+      --stroke: rgba(255,255,255,0.13);
+      --stroke-soft: rgba(255,255,255,0.08);
+      --text: #f8fafc;
+      --muted: #c8ccd6;
+      --soft: #a7adbb;
+      --dark: #12141e;
+      --shadow: 0 28px 80px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08);
+      --radius: 18px;
+    }
 
-            /* Night Theme Background */
-            --night-bg: linear-gradient(180deg, #020617 0%, #0f172a 100%);
-        }
+    * { box-sizing: border-box; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #0b0f19 100%);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 36px 18px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 72% 28%, rgba(134, 154, 202, .16), transparent 34%),
+        radial-gradient(circle at 14% 70%, rgba(82, 119, 159, .18), transparent 34%),
+        linear-gradient(135deg, #050814 0%, #080b17 45%, #03040a 100%);
+    }
 
-        .container {
-            background-color: var(--card-bg);
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-            width: 100%;
-            max-width: 700px;
-            box-sizing: border-box;
-            overflow: hidden; 
-            border: 1px solid #1e293b;
-        }
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
 
-        /* Twin Master Dynamic Screens */
-        .display-split {
-            display: flex;
-            height: 220px;
-            width: 100%;
-            position: relative;
-        }
+    body::before {
+      background-image:
+        radial-gradient(1px 1px at 9% 22%, rgba(255,255,255,.55), transparent),
+        radial-gradient(1px 1px at 30% 10%, rgba(255,255,255,.35), transparent),
+        radial-gradient(1px 1px at 52% 66%, rgba(255,255,255,.25), transparent),
+        radial-gradient(1.5px 1.5px at 76% 6%, rgba(255,255,255,.55), transparent),
+        radial-gradient(1px 1px at 92% 40%, rgba(255,255,255,.45), transparent),
+        radial-gradient(1px 1px at 18% 83%, rgba(255,255,255,.28), transparent),
+        radial-gradient(1px 1px at 84% 86%, rgba(255,255,255,.35), transparent);
+      opacity: .8;
+      animation: starDrift 9s ease-in-out infinite alternate;
+    }
 
-        .zone-card {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 24px;
-            transition: all 0.4s ease;
-            position: relative;
-            overflow: hidden;
-        }
+    body::after {
+      background:
+        linear-gradient(115deg, transparent 0 38%, rgba(96,125,176,.18) 48%, transparent 57%),
+        linear-gradient(25deg, transparent 0 55%, rgba(255,255,255,.05) 62%, transparent 68%);
+      mix-blend-mode: screen;
+      opacity: .65;
+    }
 
-        .zone-card:first-child {
-            border-right: 1px solid rgba(255,255,255,0.1);
-        }
+    @keyframes starDrift {
+      from { transform: translate3d(0,0,0); opacity: .7; }
+      to { transform: translate3d(-10px, 8px, 0); opacity: 1; }
+    }
 
-        .card-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            z-index: 5;
-        }
+    .sparkle {
+      position: fixed;
+      right: 8%;
+      bottom: 9%;
+      width: 46px;
+      height: 46px;
+      opacity: .75;
+      filter: drop-shadow(0 0 20px rgba(255,255,255,.24));
+      animation: pulse 2.8s ease-in-out infinite;
+    }
 
-        .meta-left h3 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
+    .sparkle::before,
+    .sparkle::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: #d9d9df;
+      clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+    }
 
-        .meta-left span {
-            font-size: 12px;
-            font-weight: 500;
-            opacity: 0.7;
-        }
+    .sparkle::after { transform: scale(.45) rotate(45deg); opacity: .45; }
 
-        .card-body {
-            text-align: center;
-            margin-bottom: 10px;
-            z-index: 5;
-        }
+    @keyframes pulse {
+      0%, 100% { transform: scale(.92) rotate(0deg); }
+      50% { transform: scale(1.08) rotate(12deg); }
+    }
 
-        .large-time {
-            font-size: 42px;
-            font-weight: 800;
-            letter-spacing: -1px;
-            line-height: 1;
-            margin-bottom: 12px;
-            font-variant-numeric: tabular-nums;
-        }
+    .app {
+      position: relative;
+      z-index: 1;
+      width: min(860px, 100%);
+      padding: 12px;
+      border-radius: 20px;
+      background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+      border: 1px solid rgba(255,255,255,.13);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+    }
 
-        .large-date {
-            font-size: 14px;
-            font-weight: 600;
-            opacity: 0.8;
-        }
+    .app::before {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.07);
+      pointer-events: none;
+    }
 
-        /* Star Field for Night Mode */
-        .star-field {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            background-image: 
-                radial-gradient(1px 1px at 25px 35px, #fff, transparent),
-                radial-gradient(1.5px 1.5px at 60px 120px, #fff, transparent),
-                radial-gradient(1px 1px at 120px 40px, #fff, transparent),
-                radial-gradient(2px 2px at 190px 150px, #fff, transparent),
-                radial-gradient(1.5px 1.5px at 280px 70px, #fff, transparent),
-                radial-gradient(1px 1px at 150px 180px, #fff, transparent);
-            background-size: 100% 100%;
-        }
+    .top {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      overflow: hidden;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.1);
+    }
 
-        .celestial-graphic {
-            position: absolute;
-            font-size: 70px;
-            top: 20px;
-            right: 25px;
-            z-index: 2;
-            user-select: none;
-            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-            transform: translateY(100px);
-            opacity: 0;
-        }
+    .time-card {
+      position: relative;
+      min-height: 268px;
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      isolation: isolate;
+    }
 
-        /* Active Themes */
-        .zone-card.is-day-theme {
-            background: var(--day-bg);
-            color: var(--day-text);
-        }
-        .zone-card.is-day-theme .large-time { color: var(--day-text); }
-        .zone-card.is-day-theme .celestial-graphic.sun {
-            transform: translateY(0) rotate(0deg);
-            opacity: 1;
-            filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.6));
-        }
+    .est {
+      color: #111827;
+      background:
+        radial-gradient(circle at 84% 36%, rgba(255,255,255,.7), transparent 18%),
+        linear-gradient(180deg, #aee9ff 0%, #d9f1fb 54%, #ffe2c9 100%);
+    }
 
-        .zone-card.is-night-theme {
-            background: var(--night-bg);
-            color: var(--text-main);
-        }
-        .zone-card.is-night-theme .large-time { color: #ffffff; }
-        .zone-card.is-night-theme .star-field {
-            opacity: 0.4;
-        }
-        .zone-card.is-night-theme .celestial-graphic.moon {
-            transform: translateY(0) scale(1);
-            opacity: 1;
-            filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.15));
-        }
+    .ist {
+      background:
+        radial-gradient(circle at 50% 30%, rgba(94, 99, 153, .22), transparent 24%),
+        linear-gradient(180deg, #121021 0%, #080717 72%, #090914 100%);
+      border-left: 1px solid rgba(0,0,0,.24);
+    }
 
-        /* Bottom Controls Container */
-        .app-controls {
-            padding: 30px;
-            background-color: #0f172a;
-        }
+    .cloud {
+      position: absolute;
+      width: 230px;
+      height: 72px;
+      left: -36px;
+      top: 108px;
+      background: rgba(255,255,255,.28);
+      border-radius: 60px;
+      filter: blur(.2px);
+      animation: floatCloud 8s ease-in-out infinite alternate;
+    }
 
-        .slider-wrapper {
-            position: relative;
-            margin-bottom: 25px;
-        }
+    .cloud::before,
+    .cloud::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,.26);
+    }
 
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            background: transparent;
-        }
+    .cloud::before { width: 86px; height: 86px; left: 56px; top: -42px; }
+    .cloud::after { width: 110px; height: 110px; right: 22px; top: -56px; }
 
-        input[type=range]:focus {
-            outline: none;
-        }
+    @keyframes floatCloud {
+      to { transform: translateX(34px); }
+    }
 
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 6px;
-            cursor: pointer;
-            background: #1e293b;
-            border-radius: 3px;
-        }
+    .meta {
+      position: relative;
+      z-index: 5;
+      line-height: 1.45;
+      font-size: 18px;
+      letter-spacing: .01em;
+    }
 
-        input[type=range]::-webkit-slider-thumb {
-            height: 20px;
-            width: 20px;
-            border-radius: 50%;
-            background: #ffffff;
-            cursor: pointer;
-            -webkit-appearance: none;
-            margin-top: -7px;
-            box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
-            transition: transform 0.1s;
-        }
+    .meta div {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+    }
 
-        input[type=range]::-webkit-slider-thumb:hover {
-            transform: scale(1.25);
-        }
+    .meta .offset { font-size: 16px; font-weight: 500; opacity: .9; }
 
-        .ticks {
-            display: flex;
-            justify-content: space-between;
-            padding: 0 2px;
-            margin-top: 10px;
-            color: #475569;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
+    .icon-clock {
+      width: 18px;
+      height: 18px;
+      border: 1.8px solid currentColor;
+      border-radius: 50%;
+      position: relative;
+      display: inline-block;
+      opacity: .85;
+    }
 
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 25px;
-        }
+    .icon-clock::before,
+    .icon-clock::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      background: currentColor;
+      transform-origin: left center;
+      border-radius: 99px;
+    }
 
-        .info-panel {
-            background-color: #151f32;
-            border: 1px solid #1e293b;
-            border-radius: 12px;
-            padding: 12px 16px;
-            font-size: 13px;
-        }
+    .icon-clock::before { width: 6px; height: 1.7px; transform: translateY(-50%) rotate(0deg); }
+    .icon-clock::after { width: 5px; height: 1.7px; transform: translateY(-50%) rotate(-90deg); }
 
-        .info-title {
-            color: #64748b;
-            font-weight: 600;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            font-size: 11px;
-            letter-spacing: 0.5px;
-        }
+    .center-time {
+      position: relative;
+      z-index: 5;
+      text-align: center;
+      padding-bottom: 6px;
+    }
 
-        .info-value {
-            font-weight: 500;
-            color: #e2e8f0;
-        }
+    .time {
+      font-size: clamp(42px, 6vw, 54px);
+      line-height: .95;
+      font-weight: 850;
+      letter-spacing: -.05em;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 3px 18px rgba(0,0,0,.14);
+    }
 
-        .btn-sync {
-            display: block;
-            margin: 25px auto 0 auto;
-            background: #1e293b;
-            border: 1px solid #334155;
-            padding: 10px 22px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 12px;
-            color: #f1f5f9;
-            font-weight: 600;
-            transition: all 0.2s;
-            letter-spacing: 0.5px;
-        }
+    .date {
+      margin-top: 12px;
+      font-size: 19px;
+      color: rgba(17,24,39,.86);
+    }
 
-        .btn-sync:hover {
-            background: #334155;
-            border-color: #475569;
-            transform: translateY(-1px);
-        }
+    .ist .date { color: rgba(255,255,255,.70); }
 
-        @media (max-width: 600px) {
-            .display-split {
-                flex-direction: column;
-                height: auto;
-            }
-            .zone-card:first-child {
-                border-right: none;
-                border-bottom: 1px solid rgba(255,255,255,0.1);
-            }
-            .zone-card {
-                height: 160px;
-            }
-            .celestial-graphic {
-                font-size: 55px;
-            }
-            .info-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    .sun {
+      position: absolute;
+      width: 96px;
+      height: 96px;
+      left: 50%;
+      top: 52px;
+      transform: translateX(-8%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 36% 30%, #fffbd2 0 18%, #ffe58a 35%, #f7bc4b 70%);
+      box-shadow: 0 0 28px rgba(247, 188, 75, .5), inset -10px -12px 18px rgba(174, 92, 29, .1);
+      animation: sunBob 4.8s ease-in-out infinite;
+    }
+
+    .sun::before {
+      content: "";
+      position: absolute;
+      inset: -18px;
+      background: repeating-conic-gradient(from 0deg, #f9c856 0 10deg, transparent 10deg 28deg);
+      clip-path: polygon(50% 0, 58% 28%, 85% 15%, 72% 42%, 100% 50%, 72% 58%, 85% 85%, 58% 72%, 50% 100%, 42% 72%, 15% 85%, 28% 58%, 0 50%, 28% 42%, 15% 15%, 42% 28%);
+      z-index: -1;
+      opacity: .78;
+      animation: rotate 16s linear infinite;
+    }
+
+    @keyframes sunBob { 50% { transform: translateX(-8%) translateY(-8px) scale(1.03); } }
+    @keyframes rotate { to { transform: rotate(360deg); } }
+
+    .moon {
+      position: absolute;
+      left: 50%;
+      top: 50px;
+      width: 112px;
+      height: 112px;
+      transform: translateX(-15%) rotate(-18deg);
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 26%, #ffffff, #cfd7ef 42%, #7b86ab 70%);
+      box-shadow: 0 0 36px rgba(207,215,239,.55);
+      animation: moonFloat 5s ease-in-out infinite;
+    }
+
+    .moon::after {
+      content: "";
+      position: absolute;
+      inset: -3px -20px 3px 28px;
+      border-radius: 50%;
+      background: #111022;
+    }
+
+    @keyframes moonFloat { 50% { transform: translateX(-15%) translateY(-10px) rotate(-14deg); } }
+
+    .stars span {
+      position: absolute;
+      width: 17px;
+      height: 17px;
+      background: linear-gradient(#fff, #dbe3ff);
+      clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+      filter: drop-shadow(0 0 8px rgba(255,255,255,.5));
+      animation: twinkle 2.2s ease-in-out infinite;
+    }
+
+    .stars span:nth-child(1){ left: 11%; top: 20%; transform: scale(.55); animation-delay: -.4s; }
+    .stars span:nth-child(2){ left: 24%; top: 31%; transform: scale(1.1); animation-delay: -.9s; }
+    .stars span:nth-child(3){ left: 34%; top: 52%; transform: scale(.6); animation-delay: -.2s; }
+    .stars span:nth-child(4){ left: 61%; top: 16%; transform: scale(.55); animation-delay: -.7s; }
+    .stars span:nth-child(5){ right: 16%; top: 11%; transform: scale(1.15); animation-delay: -.3s; }
+    .stars span:nth-child(6){ right: 10%; top: 39%; transform: scale(.55); animation-delay: -1.2s; }
+    .stars span:nth-child(7){ right: 24%; top: 50%; transform: scale(.75); animation-delay: -.5s; }
+    .stars span:nth-child(8){ left: 8%; top: 43%; transform: scale(.55); animation-delay: -.1s; }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: .45; transform: scale(var(--s, 1)); }
+      50% { opacity: 1; filter: drop-shadow(0 0 12px rgba(255,255,255,.85)); }
+    }
+
+    .controls {
+      margin-top: 12px;
+      padding: 32px 24px 24px;
+      border-radius: 14px;
+      border: 1px solid var(--stroke-soft);
+      background: linear-gradient(180deg, rgba(64,68,82,.72), rgba(32,35,47,.76));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.07);
+    }
+
+    .slider-wrap {
+      position: relative;
+      padding: 0 4px;
+      margin: 5px 0 30px;
+    }
+
+    .slider-glow {
+      position: absolute;
+      left: 7%;
+      right: 7%;
+      top: 17px;
+      height: 28px;
+      background: radial-gradient(ellipse at var(--progress, 50%) 50%, rgba(255,255,255,.28), transparent 22%);
+      pointer-events: none;
+      filter: blur(10px);
+    }
+
+    input[type="range"] {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      margin: 0;
+      appearance: none;
+      -webkit-appearance: none;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    input[type="range"]:focus-visible { outline: 2px solid #fff; outline-offset: 6px; border-radius: 999px; }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 7px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #ffffff 0 var(--progress, 50%), rgba(255,255,255,.12) var(--progress, 50%) 100%);
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 7px;
+      border-radius: 99px;
+      background: rgba(255,255,255,.12);
+    }
+
+    input[type="range"]::-moz-range-progress {
+      height: 7px;
+      border-radius: 99px;
+      background: #fff;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 28px;
+      height: 28px;
+      margin-top: -10.5px;
+      border-radius: 50%;
+      background: #f9fafb;
+      border: 1px solid rgba(255,255,255,.9);
+      box-shadow: 0 2px 14px rgba(0,0,0,.45), 0 0 0 4px rgba(255,255,255,.12);
+      transition: transform .18s ease;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #f9fafb;
+      border: 1px solid rgba(255,255,255,.9);
+      box-shadow: 0 2px 14px rgba(0,0,0,.45), 0 0 0 4px rgba(255,255,255,.12);
+    }
+
+    input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.08); }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .info-card {
+      min-height: 88px;
+      padding: 18px 20px;
+      border-radius: 10px;
+      background: linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.035));
+      border: 1px solid rgba(255,255,255,.095);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    }
+
+    .info-card strong {
+      display: block;
+      font-size: 20px;
+      line-height: 1.2;
+      letter-spacing: -.015em;
+      margin-bottom: 8px;
+    }
+
+    .info-card span {
+      display: block;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .sync-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 22px;
+    }
+
+    .sync-btn {
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: .01em;
+      padding: 12px 22px;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 32px rgba(0,0,0,.24);
+      transition: transform .18s ease, background .18s ease;
+    }
+
+    .sync-btn:hover { transform: translateY(-2px); background: linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.06)); }
+
+    @media (max-width: 760px) {
+      .app { width: min(520px, 100%); }
+      .top { grid-template-columns: 1fr; }
+      .ist { border-left: 0; border-top: 1px solid rgba(0,0,0,.2); }
+      .time-card { min-height: 230px; }
+      .info-grid { grid-template-columns: 1fr; }
+      .controls { padding: 26px 18px 18px; }
+    }
+
+    @media (max-width: 420px) {
+      body { padding: 18px 10px; }
+      .meta { font-size: 16px; }
+      .meta .offset { font-size: 14px; }
+      .time { font-size: 40px; }
+      .date { font-size: 16px; }
+      .sun { width: 78px; height: 78px; }
+      .moon { width: 90px; height: 90px; }
+      .info-card strong { font-size: 18px; }
+      .info-card span { font-size: 16px; }
+    }
+  </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="display-split">
-        <!-- EST/EDT Viewport -->
-        <div class="zone-card" id="estCard">
-            <div class="star-field"></div>
-            <div class="celestial-graphic sun">☀️</div>
-            <div class="celestial-graphic moon">🌙</div>
-            <div class="card-meta">
-                <div class="meta-left">
-                    <h3 id="estLabelTitle">EST</h3>
-                    <span id="estLabelSub">UTC-5</span>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="large-time" id="estTimeDisplay">- - : - -</div>
-                <div class="large-date" id="estDateDisplay">---, --- --</div>
-            </div>
+  <main class="app" aria-label="EST and IST time finder">
+    <section class="top">
+      <article class="time-card est" aria-label="Eastern Standard Time panel">
+        <div class="cloud"></div>
+        <div class="sun" aria-hidden="true"></div>
+        <div class="meta">
+          <div><i class="icon-clock" aria-hidden="true"></i><span>EST</span></div>
+          <div class="offset"><i class="icon-clock" aria-hidden="true"></i><span>UTC-5</span></div>
         </div>
-
-        <!-- IST Viewport -->
-        <div class="zone-card" id="istCard">
-            <div class="star-field"></div>
-            <div class="celestial-graphic sun">☀️</div>
-            <div class="celestial-graphic moon">🌙</div>
-            <div class="card-meta">
-                <div class="meta-left">
-                    <h3>IST</h3>
-                    <span>UTC+5:30</span>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="large-time" id="istTimeDisplay">- - : - -</div>
-                <div class="large-date" id="istDateDisplay">---, --- --</div>
-            </div>
+        <div class="center-time">
+          <div class="time" id="estTime">1:00 PM</div>
+          <div class="date" id="estDate">Mon, Nov 18</div>
         </div>
-    </div>
+      </article>
 
-    <div class="app-controls">
-        <div class="slider-wrapper">
-            <input type="range" id="timeSlider" min="0" max="1439" value="720">
-            <div class="ticks">
-                <span>MIDNIGHT</span>
+      <article class="time-card ist" aria-label="India Standard Time panel">
+        <div class="stars" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div class="moon" aria-hidden="true"></div>
+        <div class="meta">
+          <div><i class="icon-clock" aria-hidden="true"></i><span>IST</span></div>
+          <div class="offset"><i class="icon-clock" aria-hidden="true"></i><span>UTC+5:30</span></div>
+        </div>
+        <div class="center-time">
+          <div class="time" id="istTime">11:30 PM</div>
+          <div class="date" id="istDate">Tue, Nov 19</div>
+        </div>
+      </article>
+    </section>
+
+    <section class="controls" aria-label="Time selector and details">
+      <div class="slider-wrap">
+        <div class="slider-glow" id="sliderGlow"></div>
+        <input id="timeSlider" type="range" min="0" max="1439" step="15" value="780" aria-label="Select EST time" />
+      </div>
+
+      <div class="info-grid">
+        <div class="info-card">
+          <strong>EST: Eastern Standard Time</strong>
+          <span id="estInfo">1:00, Nov 18</span>
+        </div>
+        <div class="info-card">
+          <strong>IST: India Standard Time</strong>
+          <span id="istInfo">Tue, Nov 19</span>
+        </div>
+        <div class="info-card">
+          <strong>IST: India Standard Time</strong>
+          <span id="istDayInfo">Mon, Nov 18</span>
+        </div>
+        <div class="info-card">
+          <strong>IST: India Standard Time</strong>
+          <span id="istFullInfo">Tue, Nov 19</span>
+        </div>
+      </div>
+
+      <div class="sync-row">
+        <button class="sync-btn" id="syncBtn" type="button">Sync Current Time</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="sparkle" aria-hidden="true"></div>
+
+  <script>
+    const slider = document.getElementById('timeSlider');
+    const syncBtn = document.getElementById('syncBtn');
+    const estTime = document.getElementById('estTime');
+    const estDate = document.getElementById('estDate');
+    const istTime = document.getElementById('istTime');
+    const istDate = document.getElementById('istDate');
+    const estInfo = document.getElementById('estInfo');
+    const istInfo = document.getElementById('istInfo');
+    const istDayInfo = document.getElementById('istDayInfo');
+    const istFullInfo = document.getElementById('istFullInfo');
+    const sliderGlow = document.getElementById('sliderGlow');
+
+    const BASE_YEAR = 2024;
+    const BASE_MONTH = 10; // November, zero-indexed
+    const BASE_DAY = 18;
+    const IST_OFFSET_MINUTES = 10 * 60 + 30; // IST is 10h 30m ahead of fixed EST/UTC-5
+
+    function pad(value) {
+      return String(value).padStart(2, '0');
+    }
+
+    function formatTime(date) {
+      let hours = date.getHours();
+      const minutes = date.getMinutes();
+      const suffix = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      return `${hours}:${pad(minutes)} ${suffix}`;
+    }
+
+    function formatDate(date) {
+      return date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+
+    function formatInfo(date, includeTime = true) {
+      const day = date.toLocaleDateString('en-US', { weekday: 'short' });
+      const month = date.toLocaleDateString('en-US', { month: 'short' });
+      const dateNum = date.getDate();
+      const time = formatTime(date).replace(' AM', '').replace(' PM', '');
+      return includeTime ? `${time}, ${month} ${dateNum}` : `${day}, ${month} ${dateNum}`;
+    }
+
+    function minutesForFixedESTNow() {
+      const now = new Date();
+      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+      const fixedEst = new Date(utc - 5 * 60 * 60000);
+      return fixedEst.getHours() * 60 + fixedEst.getMinutes();
+    }
+
+    function updateUI() {
+      const minutes = Number(slider.value);
+      const progress = (minutes / 1439) * 100;
+      document.documentElement.style.setProperty('--progress', `${progress}%`);
+      slider.style.setProperty('--progress', `${progress}%`);
+      sliderGlow.style.setProperty('--progress', `${progress}%`);
+
+      const est = new Date(BASE_YEAR, BASE_MONTH, BASE_DAY, 0, minutes, 0, 0);
+      const ist = new Date(est.getTime() + IST_OFFSET_MINUTES * 60000);
+
+      estTime.textContent = formatTime(est);
+      istTime.textContent = formatTime(ist);
+      estDate.textContent = formatDate(est);
+      istDate.textContent = formatDate(ist);
+
+      estInfo.textContent = formatInfo(est, true);
+      istInfo.textContent = formatDate(ist);
+      istDayInfo.textContent = formatDate(est);
+      istFullInfo.textContent = formatDate(ist);
+    }
+
+    syncBtn.addEventListener('click', () => {
+      slider.value = Math.round(minutesForFixedESTNow() / 15) * 15;
+      updateUI();
+    });
+
+    slider.addEventListener('input', updateUI);
+    updateUI();
+  </script>
+</body>
+</html>
