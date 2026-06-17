@@ -549,10 +549,9 @@
     const istFullInfo = document.getElementById('istFullInfo');
     const sliderGlow = document.getElementById('sliderGlow');
 
-    const BASE_YEAR = 2024;
-    const BASE_MONTH = 10; // November, zero-indexed
-    const BASE_DAY = 18;
+    let selectedBaseDate = getFixedESTDate(new Date());
     const IST_OFFSET_MINUTES = 10 * 60 + 30; // IST is 10h 30m ahead of fixed EST/UTC-5
+    let isSyncedToCurrentTime = true;
 
     function pad(value) {
       return String(value).padStart(2, '0');
@@ -582,11 +581,27 @@
       return includeTime ? `${time}, ${month} ${dateNum}` : `${day}, ${month} ${dateNum}`;
     }
 
+    function getFixedESTDate(date) {
+      const utc = date.getTime() + date.getTimezoneOffset() * 60000;
+      return new Date(utc - 5 * 60 * 60000);
+    }
+
     function minutesForFixedESTNow() {
-      const now = new Date();
-      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-      const fixedEst = new Date(utc - 5 * 60 * 60000);
+      const fixedEst = getFixedESTDate(new Date());
       return fixedEst.getHours() * 60 + fixedEst.getMinutes();
+    }
+
+    function roundToSliderStep(minutes) {
+      const rounded = Math.round(minutes / 15) * 15;
+      return Math.min(1439, Math.max(0, rounded));
+    }
+
+    function syncToCurrentTime() {
+      const fixedEstNow = getFixedESTDate(new Date());
+      selectedBaseDate = fixedEstNow;
+      slider.value = roundToSliderStep(fixedEstNow.getHours() * 60 + fixedEstNow.getMinutes());
+      isSyncedToCurrentTime = true;
+      updateUI();
     }
 
     function updateUI() {
@@ -596,7 +611,15 @@
       slider.style.setProperty('--progress', `${progress}%`);
       sliderGlow.style.setProperty('--progress', `${progress}%`);
 
-      const est = new Date(BASE_YEAR, BASE_MONTH, BASE_DAY, 0, minutes, 0, 0);
+      const est = new Date(
+        selectedBaseDate.getFullYear(),
+        selectedBaseDate.getMonth(),
+        selectedBaseDate.getDate(),
+        0,
+        minutes,
+        0,
+        0
+      );
       const ist = new Date(est.getTime() + IST_OFFSET_MINUTES * 60000);
 
       estTime.textContent = formatTime(est);
@@ -610,13 +633,22 @@
       istFullInfo.textContent = formatDate(ist);
     }
 
-    syncBtn.addEventListener('click', () => {
-      slider.value = Math.round(minutesForFixedESTNow() / 15) * 15;
+    syncBtn.addEventListener('click', syncToCurrentTime);
+
+    slider.addEventListener('input', () => {
+      isSyncedToCurrentTime = false;
       updateUI();
     });
 
-    slider.addEventListener('input', updateUI);
-    updateUI();
+    // Load the page already synced to the current fixed EST time.
+    syncToCurrentTime();
+
+    // Keep it live while the user has not manually moved the slider.
+    setInterval(() => {
+      if (isSyncedToCurrentTime) {
+        syncToCurrentTime();
+      }
+    }, 60 * 1000);
   </script>
 </body>
 </html>
