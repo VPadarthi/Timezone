@@ -6,19 +6,28 @@
     <title>Interactive Time Zone Converter (EST & IST)</title>
     <style>
         :root {
-            --bg-color: #0f172a; 
-            --card-bg: #1e293b; 
+            --bg-color: #0b0f19; 
+            --card-bg: #151f32; 
             --text-main: #f8fafc; 
-            --text-muted: #94a3b8; 
+            --text-muted: #64748b; 
             --primary: #38bdf8; 
             --accent: #fbbf24; 
-            --slider-track: #334155; 
-            --box-bg: #111827; 
+            --slider-track: #1e293b; 
+            --box-bg: #0f172a; 
+            
+            /* Day Theme Background & Accents */
+            --day-bg: linear-gradient(180deg, #bae6fd 0%, #ffedd5 100%);
+            --day-text: #0f172a;
+            --day-muted: #475569;
+
+            /* Night Theme Background */
+            --night-bg: linear-gradient(180deg, #020617 0%, #0f172a 100%);
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #0b0f19 100%);
             color: var(--text-main);
             margin: 0;
             padding: 20px;
@@ -30,83 +39,147 @@
 
         .container {
             background-color: var(--card-bg);
-            border-radius: 16px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
             width: 100%;
-            max-width: 550px;
+            max-width: 700px;
             box-sizing: border-box;
+            overflow: hidden; 
+            border: 1px solid #1e293b;
         }
 
-        h1 {
-            font-size: 24px;
-            margin-top: 0;
-            margin-bottom: 8px;
-            text-align: center;
-            letter-spacing: -0.5px;
+        /* Twin Master Dynamic Screens */
+        .display-split {
+            display: flex;
+            height: 220px;
+            width: 100%;
+            position: relative;
         }
 
-        .subtitle {
-            color: var(--text-muted);
-            text-align: center;
-            font-size: 14px;
-            margin-bottom: 30px;
+        .zone-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 24px;
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
         }
 
-        .time-box {
-            background: var(--box-bg);
-            border-left: 5px solid var(--primary);
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 15px;
+        /* Divider bar between screens */
+        .zone-card:first-child {
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Top metadata layout row */
+        .card-meta {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+            align-items: flex-start;
+            z-index: 5;
         }
 
-        .time-box.ist {
-            border-left-color: var(--accent);
-        }
-
-        .zone-label {
-            font-weight: 600;
-            font-size: 16px;
-            color: var(--text-main);
-        }
-
-        .zone-sub {
-            font-size: 12px;
-            color: var(--text-muted);
-            display: block;
-            font-weight: normal;
-            margin-top: 2px;
-        }
-
-        .time-display {
-            font-size: 28px;
+        .meta-left h3 {
+            margin: 0;
+            font-size: 18px;
             font-weight: 700;
-            font-variant-numeric: tabular-nums;
-            color: #ffffff;
+            letter-spacing: 0.5px;
         }
 
-        .date-display {
+        .meta-left span {
+            font-size: 12px;
+            font-weight: 500;
+            opacity: 0.7;
+        }
+
+        /* Large Central Time and Date Display Block */
+        .card-body {
+            text-align: center;
+            margin-bottom: 10px;
+            z-index: 5;
+        }
+
+        .large-time {
+            font-size: 42px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            line-height: 1;
+            margin-bottom: 6px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .large-date {
             font-size: 14px;
             font-weight: 600;
-            color: #e2e8f0;
-            text-align: right;
-            margin-top: 4px;
+            opacity: 0.8;
         }
 
-        .day-offset {
-            font-size: 11px;
-            color: var(--text-muted);
-            display: block;
-            font-weight: normal;
+        /* Star Generation Field for Night Mode layers */
+        .star-field {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            background-image: 
+                radial-gradient(1px 1px at 25px 35px, #fff, transparent),
+                radial-gradient(1.5px 1.5px at 60px 120px, #fff, transparent),
+                radial-gradient(1px 1px at 120px 40px, #fff, transparent),
+                radial-gradient(2px 2px at 190px 150px, #fff, transparent),
+                radial-gradient(1.5px 1.5px at 280px 70px, #fff, transparent),
+                radial-gradient(1px 1px at 150px 180px, #fff, transparent);
+            background-size: 100% 100%;
         }
 
-        .slider-container {
-            margin: 35px 0 20px 0;
+        /* Big Floating Celestial Icons styling specs */
+        .celestial-graphic {
+            position: absolute;
+            font-size: 70px;
+            top: 20px;
+            right: 25px;
+            z-index: 2;
+            user-select: none;
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: translateY(100px);
+            opacity: 0;
+        }
+
+        /* Active Celestial State Switch Engines */
+        .zone-card.is-day-theme {
+            background: var(--day-bg);
+            color: var(--day-text);
+        }
+        .zone-card.is-day-theme .large-time { color: var(--day-text); }
+        .zone-card.is-day-theme .celestial-graphic.sun {
+            transform: translateY(0) rotate(0deg);
+            opacity: 1;
+            filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.6));
+        }
+
+        .zone-card.is-night-theme {
+            background: var(--night-bg);
+            color: var(--text-main);
+        }
+        .zone-card.is-night-theme .star-field {
+            opacity: 0.4;
+        }
+        .zone-card.is-night-theme .celestial-graphic.moon {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+            filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.15));
+        }
+
+        /* Bottom Application Controls Section */
+        .app-controls {
+            padding: 30px;
+            background-color: #0f172a;
+        }
+
+        /* Interactive Timeline Slider Component styling specs */
+        .slider-wrapper {
+            position: relative;
+            margin-bottom: 25px;
         }
 
         input[type=range] {
@@ -121,196 +194,141 @@
 
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
-            height: 10px;
+            height: 6px;
             cursor: pointer;
-            background: var(--slider-track);
-            border-radius: 5px;
+            background: #1e293b;
+            border-radius: 3px;
         }
 
         input[type=range]::-webkit-slider-thumb {
-            height: 24px;
-            width: 24px;
+            height: 20px;
+            width: 20px;
             border-radius: 50%;
-            background: var(--primary);
+            background: #ffffff;
             cursor: pointer;
             -webkit-appearance: none;
             margin-top: -7px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            transition: transform 0.1s, background-color 0.2s;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+            transition: transform 0.1s;
         }
 
         input[type=range]::-webkit-slider-thumb:hover {
-            transform: scale(1.15);
-            background: #7dd3fc;
+            transform: scale(1.25);
         }
 
         .ticks {
             display: flex;
             justify-content: space-between;
-            padding: 0 5px;
-            margin-top: 8px;
-            color: var(--text-muted);
+            padding: 0 2px;
+            margin-top: 10px;
+            color: #475569;
             font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
 
-        .btn-reset {
+        /* Descriptive readouts bottom informational panel layout grids */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .info-panel {
+            background-color: #151f32;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 13px;
+        }
+
+        .info-title {
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+
+        .btn-sync {
             display: block;
-            margin: 20px auto 0 auto;
-            background: #334155;
-            border: 1px solid #475569;
-            padding: 8px 16px;
+            margin: 25px auto 0 auto;
+            background: #1e293b;
+            border: 1px solid #334155;
+            padding: 10px 22px;
             border-radius: 20px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 12px;
             color: #f1f5f9;
-            font-weight: 500;
-            transition: background 0.2s, border-color 0.2s;
+            font-weight: 600;
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
         }
 
-        .btn-reset:hover {
-            background: #475569;
-            border-color: #64748b;
+        .btn-sync:hover {
+            background: #334155;
+            border-color: #475569;
+            transform: translateY(-1px);
+        }
+
+        /* Responsive Mobile Breakpoint adjustment overrides */
+        @media (max-width: 600px) {
+            .display-split {
+                flex-direction: column;
+                height: auto;
+            }
+            .zone-card:first-child {
+                border-right: none;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+            .zone-card {
+                height: 160px;
+            }
+            .celestial-graphic {
+                font-size: 55px;
+            }
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>EST / IST Time Finder</h1>
-    <p class="subtitle">Drag the scroll bar to view corresponding matching times and dates</p>
-
-    <!-- EST Card -->
-    <div class="time-box">
-        <div>
-            <span class="zone-label" id="estTitle">EST</span>
-            <span class="zone-sub" id="estOffset">Eastern Standard Time</span>
+    <!-- Split Screen Graphical Viewports (Top) -->
+    <div class="display-split">
+        <!-- EST Viewport -->
+        <div class="zone-card" id="estCard">
+            <div class="star-field"></div>
+            <div class="celestial-graphic sun">☀️</div>
+            <div class="celestial-graphic moon">🌙</div>
+            <div class="card-meta">
+                <div class="meta-left">
+                    <h3 id="estLabelTitle">EST</h3>
+                    <span id="estLabelSub">UTC-5</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="large-time" id="estTimeDisplay">12:00 AM</div>
+                <div class="large-date" id="estDateDisplay">---, --- --</div>
+            </div>
         </div>
-        <div>
-            <div class="time-display" id="estTime">- - : - -</div>
-            <div class="date-display" id="estDate">- - - -</div>
-        </div>
-    </div>
 
-    <!-- IST Card -->
-    <div class="time-box ist">
-        <div>
-            <span class="zone-label">IST</span>
-            <span class="zone-sub">India Standard Time (UTC+5:30)</span>
-        </div>
-        <div>
-            <div class="time-display" id="istTime">- - : - -</div>
-            <div class="date-display" id="istDate">- - - -</div>
-        </div>
-    </div>
-
-    <!-- Interactive Scroll Bar -->
-    <div class="slider-container">
-        <input type="range" id="timeSlider" min="0" max="1439" value="720">
-        <div class="ticks">
-            <span>12 AM</span>
-            <span>6 AM</span>
-            <span>12 PM</span>
-            <span>6 PM</span>
-            <span>11 PM</span>
-        </div>
-    </div>
-
-    <button class="btn-reset" id="resetBtn">Reset to Current Time</button>
-</div>
-
-<script>
-    const slider = document.getElementById('timeSlider');
-    const estTimeEl = document.getElementById('estTime');
-    const estDateEl = document.getElementById('estDate');
-    const istTimeEl = document.getElementById('istTime');
-    const istDateEl = document.getElementById('istDate');
-    const estOffsetEl = document.getElementById('estOffset');
-    const estTitleEl = document.getElementById('estTitle');
-    const resetBtn = document.getElementById('resetBtn');
-
-    // Safe, universal check for Eastern Daylight Saving status
-    function checkDST() {
-        const d = new Date();
-        const nyString = d.toLocaleString("en-US", {timeZone: "America/New_York", timeZoneName: "short"});
-        const isEDT = nyString.includes("EDT");
-        
-        if (isEDT) {
-            estTitleEl.innerText = "EDT";
-            estOffsetEl.innerText = "Eastern Daylight Time (UTC-4)";
-            return -240; // -4 hours in minutes
-        } else {
-            estTitleEl.innerText = "EST";
-            estOffsetEl.innerText = "Eastern Standard Time (UTC-5)";
-            return -300; // -5 hours in minutes
-        }
-    }
-
-    const estOffsetMinutes = checkDST();
-    const istOffsetMinutes = 330; // Fixed India offset (+5:30)
-
-    function setSliderToCurrentTime() {
-        const now = new Date();
-        // Convert to absolute UTC minutes from midnight
-        const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
-        // Convert UTC to local Eastern time minutes
-        let estMinutesToday = (utcMinutes + estOffsetMinutes + 1440) % 1440;
-        
-        slider.value = estMinutesToday;
-        updateTimes(estMinutesToday);
-    }
-
-    function formatTime(hours, minutes) {
-        let ampm = hours >= 12 ? 'PM' : 'AM';
-        hours = hours % 12;
-        hours = hours ? hours : 12; 
-        minutes = minutes < 10 ? '0' + minutes : minutes;
-        return `${hours}:${minutes} ${ampm}`;
-    }
-
-    function formatDate(dateObj) {
-        const options = { weekday: 'short', month: 'short', day: 'numeric' };
-        return dateObj.toLocaleDateString('en-US', options);
-    }
-
-    function updateTimes(estMinutes) {
-        // Find current base day in New York timezone safely
-        const now = new Date();
-        const nyString = now.toLocaleString("en-US", {timeZone: "America/New_York"});
-        const estBaseDate = new Date(nyString);
-        
-        // Update New York target date using explicit slider parameters
-        estBaseDate.setHours(Math.floor(estMinutes / 60), Math.floor(estMinutes % 60), 0, 0);
-
-        // Display New York output fields
-        estTimeEl.innerText = formatTime(estBaseDate.getHours(), estBaseDate.getMinutes());
-        estDateEl.innerHTML = `${formatDate(estBaseDate)} <span class="day-offset">Selected Base Day</span>`;
-
-        // Calculate explicit offset difference between zones
-        const totalDiffMinutes = istOffsetMinutes - estOffsetMinutes;
-        const istCalculatedDate = new Date(estBaseDate.getTime() + totalDiffMinutes * 60 * 1000);
-
-        // Display India output fields
-        istTimeEl.innerText = formatTime(istCalculatedDate.getHours(), istCalculatedDate.getMinutes());
-
-        // Determine if India has crossed into a different calendar date
-        let dateLabel = "Same Day";
-        if (istCalculatedDate.getDate() !== estBaseDate.getDate()) {
-            dateLabel = istCalculatedDate.getTime() > estBaseDate.getTime() ? "Next Day (+1)" : "Previous Day (-1)";
-        }
-        
-        istDateEl.innerHTML = `${formatDate(istCalculatedDate)} <span class="day-offset">${dateLabel}</span>`;
-    }
-
-    // Event listeners
-    slider.addEventListener('input', (e) => {
-        updateTimes(parseInt(e.target.value));
-    });
-
-    resetBtn.addEventListener('click', setSliderToCurrentTime);
-
-    // Run app on launch
-    setSliderToCurrentTime();
-</script>
-
-</body>
-</html>
+        <!-- IST Viewport -->
+        <div class="zone-card" id="istCard">
+            <div class="star-field"></div>
+            <div class="celestial-graphic sun">☀️</div>
+            <div class="celestial-graphic moon">🌙</div>
+            <div class="card-meta">
+                <div class="meta-left">
+                    <h3>IST</h3>
+                    <span>UTC+5:30</span>
+                </div>
