@@ -18,7 +18,6 @@
             /* Day Theme Background & Accents */
             --day-bg: linear-gradient(180deg, #bae6fd 0%, #ffedd5 100%);
             --day-text: #0f172a;
-            --day-muted: #475569;
 
             /* Night Theme Background */
             --night-bg: linear-gradient(180deg, #020617 0%, #0f172a 100%);
@@ -67,12 +66,10 @@
             overflow: hidden;
         }
 
-        /* Divider bar between screens */
         .zone-card:first-child {
             border-right: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* Top metadata layout row */
         .card-meta {
             display: flex;
             justify-content: space-between;
@@ -93,7 +90,6 @@
             opacity: 0.7;
         }
 
-        /* Large Central Time and Date Display Block */
         .card-body {
             text-align: center;
             margin-bottom: 10px;
@@ -105,7 +101,7 @@
             font-weight: 800;
             letter-spacing: -1px;
             line-height: 1;
-            margin-bottom: 6px;
+            margin-bottom: 12px;
             font-variant-numeric: tabular-nums;
         }
 
@@ -115,7 +111,7 @@
             opacity: 0.8;
         }
 
-        /* Star Generation Field for Night Mode layers */
+        /* Star Field for Night Mode */
         .star-field {
             position: absolute;
             inset: 0;
@@ -132,7 +128,6 @@
             background-size: 100% 100%;
         }
 
-        /* Big Floating Celestial Icons styling specs */
         .celestial-graphic {
             position: absolute;
             font-size: 70px;
@@ -145,7 +140,7 @@
             opacity: 0;
         }
 
-        /* Active Celestial State Switch Engines */
+        /* Active Themes */
         .zone-card.is-day-theme {
             background: var(--day-bg);
             color: var(--day-text);
@@ -161,6 +156,7 @@
             background: var(--night-bg);
             color: var(--text-main);
         }
+        .zone-card.is-night-theme .large-time { color: #ffffff; }
         .zone-card.is-night-theme .star-field {
             opacity: 0.4;
         }
@@ -170,13 +166,12 @@
             filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.15));
         }
 
-        /* Bottom Application Controls Section */
+        /* Bottom Controls Container */
         .app-controls {
             padding: 30px;
             background-color: #0f172a;
         }
 
-        /* Interactive Timeline Slider Component styling specs */
         .slider-wrapper {
             position: relative;
             margin-bottom: 25px;
@@ -227,7 +222,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Descriptive readouts bottom informational panel layout grids */
         .info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -278,7 +272,6 @@
             transform: translateY(-1px);
         }
 
-        /* Responsive Mobile Breakpoint adjustment overrides */
         @media (max-width: 600px) {
             .display-split {
                 flex-direction: column;
@@ -303,9 +296,8 @@
 <body>
 
 <div class="container">
-    <!-- Split Screen Graphical Viewports (Top) -->
     <div class="display-split">
-        <!-- EST Viewport -->
+        <!-- EST/EDT Viewport -->
         <div class="zone-card" id="estCard">
             <div class="star-field"></div>
             <div class="celestial-graphic sun">☀️</div>
@@ -317,7 +309,7 @@
                 </div>
             </div>
             <div class="card-body">
-                <div class="large-time" id="estTimeDisplay">12:00 AM</div>
+                <div class="large-time" id="estTimeDisplay">- - : - -</div>
                 <div class="large-date" id="estDateDisplay">---, --- --</div>
             </div>
         </div>
@@ -332,3 +324,16 @@
                     <h3>IST</h3>
                     <span>UTC+5:30</span>
                 </div>
+            </div>
+            <div class="card-body">
+                <div class="large-time" id="istTimeDisplay">- - : - -</div>
+                <div class="large-date" id="istDateDisplay">---, --- --</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-controls">
+        <div class="slider-wrapper">
+            <input type="range" id="timeSlider" min="0" max="1439" value="720">
+            <div class="ticks">
+                <span>MIDNIGHT</span>
